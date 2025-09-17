@@ -1,15 +1,42 @@
 # src/train.py
 
+"""
+Script para entrenar un modelo YOLOv8 para segmentación de gestos de auxilio ("Signal for Help").
+
+Este archivo permite configurar las rutas del dataset, el número de épocas,
+el tamaño de las imágenes y el tipo de modelo a utilizar.
+
+Autor: Daniel Carlosama Martínez
+Fecha: 2025-09
+
+Uso:
+    uv run src/train.py --data data/dataset.yaml --epochs 50 --img 640
+"""
+
 import argparse
 from ultralytics import YOLO
 from pathlib import Path
 
+
 def train_model(data_yaml, epochs, img_size, model_type, save_dir):
+    """
+    Entrena un modelo YOLOv8 para segmentación de imágenes.
+
+    Args:
+        data_yaml (str): Ruta al archivo YAML del dataset con estructura Roboflow.
+        epochs (int): Número de épocas de entrenamiento.
+        img_size (int): Dimensión de las imágenes (cuadradas).
+        model_type (str): Tipo de modelo YOLOv8 (ej. 'yolov8n-seg.pt').
+        save_dir (str): Carpeta donde se guardarán los resultados.
+
+    Returns:
+        None
+    """
     print(f"Entrenando modelo: {model_type}")
     print(f"Dataset: {data_yaml}")
     print(f"Épocas: {epochs}, Tamaño de imagen: {img_size}")
 
-    model = YOLO(model_type)  # por ejemplo 'yolov8n-seg.pt'
+    model = YOLO(model_type)
 
     model.train(
         data=data_yaml,
@@ -21,15 +48,16 @@ def train_model(data_yaml, epochs, img_size, model_type, save_dir):
         exist_ok=True
     )
 
-    # Copiar el mejor modelo a artefactos
+    # Copia el modelo entrenado final (best.pt) a la carpeta artefactos
     best_model = Path(save_dir) / "signalforhelp" / "weights" / "best.pt"
     target = Path("artefactos") / "best.pt"
     if best_model.exists():
         target.parent.mkdir(parents=True, exist_ok=True)
         best_model.replace(target)
-        print(f"Modelo guardado en: {target.resolve()}")
+        print(f"✅ Modelo guardado en: {target.resolve()}")
     else:
-        print("No se encontró el modelo entrenado.")
+        print("⚠️ No se encontró el modelo entrenado.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Entrenamiento YOLOv8 Signal for Help")
