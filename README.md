@@ -1,26 +1,49 @@
 # 🧠 Proyecto: Signal For Help - Entrenamiento de modelo YOLOv8
 
-Este proyecto entrena un modelo de segmentación con YOLOv8 para identificar gestos de ayuda (palma abierta y puño cerrado), como parte de una solución de visión computacional en contextos de emergencia.
+Este repositorio entrena un modelo de segmentación con **YOLOv8n-seg** para identificar gestos de auxilio (✋ palma abierta, ✊ puño cerrado), como parte de una solución de visión computacional en contextos de emergencia.
 
-## ⚙️ Requisitos
+---
 
-- Python 3.11
-- [uv](https://github.com/astral-sh/uv) (gestor de entornos recomendado)
+## ⚙️ Requisitos del entorno
+
+- Python 3.11+
+- [uv](https://github.com/astral-sh/uv) (gestor de entorno y dependencias)
 - Git
-- ffmpeg, libgl1 (solo para entorno Docker o sistemas Linux)
+- `ffmpeg`, `libgl1` (solo para sistemas Linux o Docker)
+
+---
 
 ## 🔧 Instalación
 
 ```bash
+# Clona el repositorio
+git clone https://github.com/tu-usuario/tu-repo.git
+cd tu-repo
+
+# Crea entorno virtual e instala dependencias
 uv venv
 uv pip install -r requirements.txt
 
+
 ```
+## 📈 Seguimiento con MLflow
+
+```bash
+mlflow ui
+```
+
 ## 🚀 Entrenamiento del modelo
 
 ```bash
 uv run src/train.py --data data/dataset.yaml --epochs 50 --img 640
 ```
+Abre tu navegador en: http://127.0.0.1:5000
+
+Aquí puedes:
+
+Ver parámetros de entrenamiento
+Visualizar métricas por epoch
+Descargar el modelo entrenado
 
 ## 📸 Inferencia por imagen
 
