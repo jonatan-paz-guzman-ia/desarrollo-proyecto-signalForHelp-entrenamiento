@@ -1,7 +1,9 @@
+path: ./data
+
 train: train/images
 val: valid/images
 test: test/images
 
-nc: 2
-names: ['palma', 'puno']
+nc: 2  # número de clases
+names: ["palma", "puno"]
 
