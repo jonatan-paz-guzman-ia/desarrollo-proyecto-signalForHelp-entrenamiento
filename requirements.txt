@@ -3,3 +3,4 @@ torch>=2.0.0
 opencv-python
 numpy
 pytest
+mlflow==2.11.1

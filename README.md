@@ -31,19 +31,20 @@ uv pip install -r requirements.txt
 ```bash
 mlflow ui
 ```
+Abre tu navegador en: http://127.0.0.1:5000
+
+Aquí puedes:
+
+- Ver parámetros de entrenamiento
+- Visualizar métricas por epoch
+- Descargar el modelo entrenado
 
 ## 🚀 Entrenamiento del modelo
 
 ```bash
 uv run src/train.py --data data/dataset.yaml --epochs 50 --img 640
 ```
-Abre tu navegador en: http://127.0.0.1:5000
 
-Aquí puedes:
-
-Ver parámetros de entrenamiento
-Visualizar métricas por epoch
-Descargar el modelo entrenado
 
 ## 📸 Inferencia por imagen
 
