@@ -38,8 +38,11 @@ def train_model(data_yaml, epochs, img_size, model_type, save_dir):
     print(f"Dataset: {data_yaml}")
     print(f"Épocas: {epochs}, Tamaño de imagen: {img_size}")
 
-    # Inicia el experimento en MLflow
-    mlflow.set_experiment("SignalForHelp - YOLOv8")
+    # Configura MLflow para enviar datos al servidor remoto
+    mlflow.set_tracking_uri("http://localhost:5000")  # ⚡ Ajusta la URL a tu servidor MLflow
+    mlflow.set_experiment("SignalForHelp - YOLOv8_v2")
+
+    # Inicia el experimento
     with mlflow.start_run():
         mlflow.log_param("model_type", model_type)
         mlflow.log_param("epochs", epochs)
@@ -64,14 +67,14 @@ def train_model(data_yaml, epochs, img_size, model_type, save_dir):
         if best_model.exists():
             target.parent.mkdir(parents=True, exist_ok=True)
             best_model.replace(target)
-            print(f"✅ Modelo guardado en: {target.resolve()}")
+            print(f" Modelo guardado en: {target.resolve()}")
 
             # Registra el modelo en MLflow
             mlflow.log_artifact(str(target), artifact_path="model")
         else:
-            print("⚠️ No se encontró el modelo entrenado.")
+            print(" No se encontró el modelo entrenado.")
 
-        # Registrar algunas métricas básicas si están disponibles
+        # Registrar métricas en MLflow (si están disponibles)
         try:
             metrics = results.metrics
             mlflow.log_metric("precision", metrics.box.map if metrics.box else 0)
