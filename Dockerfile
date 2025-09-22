@@ -1,27 +1,29 @@
-# Dockerfile
-
-# Imagen base con Python
+# Imagen base
 FROM python:3.11-slim
 
-# Establecer el directorio de trabajo
+# Directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos necesarios
-COPY . .
+# Evitar archivos .pyc y usar stdout para logs
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Instalar sistema y dependencias del proyecto
-RUN apt-get update && apt-get install -y \
+# Instalar dependencias del sistema necesarias
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ffmpeg \
     libgl1 \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar UV (gestor de entorno)
-RUN pip install uv
+# Copiar requirements primero (aprovecha la cache)
+COPY requirements.txt .
 
-# Crear entorno virtual y activar
-RUN uv venv && \
-    uv pip install -r requirements.txt
+# Instalar dependencias Python
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# Comando por defecto (puedes cambiar por camera o train si prefieres)
-CMD ["uv", "run", "src/inference.py", "--source", "data/test/images"]
+# Copiar el resto del proyecto
+COPY . .
+
+# Comando por defecto (puedes sobreescribirlo en docker run)
+CMD ["python", "src/train.py", "--data", "data/dataset.yaml", "--epochs", "2", "--img", "640"]
