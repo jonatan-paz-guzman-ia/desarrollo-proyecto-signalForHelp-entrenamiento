@@ -3,10 +3,11 @@
 """
 Script para entrenar un modelo YOLOv8 para segmentación de gestos de auxilio ("Signal for Help").
 
-Este archivo permite configurar las rutas del dataset, el número de épocas,
-el tamaño de las imágenes y el tipo de modelo a utilizar. Ahora incluye MLflow para tracking de experimentos.
+Ahora:
+- Entrena el modelo con Ultralytics.
+- Desactiva cualquier callback automático de MLflow en Ultralytics.
+- Después del entrenamiento, registra parámetros, artefactos y métricas en MLflow de forma manual.
 
-Autor: Daniel Carlosama Martínez
 Fecha: 2025-09
 
 Uso:
@@ -17,68 +18,62 @@ import argparse
 from ultralytics import YOLO
 from pathlib import Path
 import mlflow
-import mlflow.pyfunc
 
 
 def train_model(data_yaml, epochs, img_size, model_type, save_dir):
-    """
-    Entrena un modelo YOLOv8 para segmentación de imágenes y registra el experimento con MLflow.
-
-    Args:
-        data_yaml (str): Ruta al archivo YAML del dataset con estructura Roboflow.
-        epochs (int): Número de épocas de entrenamiento.
-        img_size (int): Dimensión de las imágenes (cuadradas).
-        model_type (str): Tipo de modelo YOLOv8 (ej. 'yolov8n-seg.pt').
-        save_dir (str): Carpeta donde se guardarán los resultados.
-
-    Returns:
-        None
-    """
     print(f"Entrenando modelo: {model_type}")
     print(f"Dataset: {data_yaml}")
     print(f"Épocas: {epochs}, Tamaño de imagen: {img_size}")
 
-    # Inicia el experimento en MLflow
+    # Cargar modelo
+    model = YOLO(model_type)
+
+    # Eliminar callback automático de MLflow de Ultralytics
+    if "mlflow" in model.callbacks:
+        del model.callbacks["mlflow"]
+
+    # Entrenar modelo
+    results = model.train(
+        data=data_yaml,
+        epochs=epochs,
+        imgsz=img_size,
+        save=True,
+        project=save_dir,
+        name="signalforhelp",
+        exist_ok=True,
+    )
+
+    # Guardar best.pt en artefactos
+    best_model = Path(save_dir) / "signalforhelp" / "weights" / "best.pt"
+    target = Path("artefactos") / "best.pt"
+    if best_model.exists():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        best_model.replace(target)
+        print(f"✅ Modelo guardado en: {target.resolve()}")
+    else:
+        print("⚠️ No se encontró el modelo entrenado.")
+
+    # Registro manual en MLflow (después del entrenamiento)
     mlflow.set_experiment("SignalForHelp - YOLOv8")
     with mlflow.start_run():
+        # Parámetros
         mlflow.log_param("model_type", model_type)
         mlflow.log_param("epochs", epochs)
         mlflow.log_param("img_size", img_size)
         mlflow.log_param("dataset", data_yaml)
 
-        # Entrena el modelo
-        model = YOLO(model_type)
-        results = model.train(
-            data=data_yaml,
-            epochs=epochs,
-            imgsz=img_size,
-            save=True,
-            project=save_dir,
-            name="signalforhelp",
-            exist_ok=True
-        )
-
-        # Ruta al mejor modelo
-        best_model = Path(save_dir) / "signalforhelp" / "weights" / "best.pt"
-        target = Path("artefactos") / "best.pt"
-        if best_model.exists():
-            target.parent.mkdir(parents=True, exist_ok=True)
-            best_model.replace(target)
-            print(f"✅ Modelo guardado en: {target.resolve()}")
-
-            # Registra el modelo en MLflow
+        # Artefacto del modelo
+        if target.exists():
             mlflow.log_artifact(str(target), artifact_path="model")
-        else:
-            print("⚠️ No se encontró el modelo entrenado.")
 
-        # Registrar algunas métricas básicas si están disponibles
+        # Métricas básicas
         try:
             metrics = results.metrics
-            mlflow.log_metric("precision", metrics.box.map if metrics.box else 0)
-            mlflow.log_metric("recall", metrics.box.map50 if metrics.box else 0)
-            mlflow.log_metric("segmentation_mAP", metrics.seg.map if metrics.seg else 0)
+            mlflow.log_metric("precision", getattr(metrics.box, "map", 0))
+            mlflow.log_metric("recall", getattr(metrics.box, "map50", 0))
+            mlflow.log_metric("segmentation_mAP", getattr(metrics.seg, "map", 0))
         except Exception as e:
-            print("No se pudieron registrar métricas en MLflow:", e)
+            print("⚠️ No se pudieron registrar métricas en MLflow:", e)
 
 
 if __name__ == "__main__":
