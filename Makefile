@@ -1,5 +1,5 @@
 train:
-	uv run src/train.py --data data/dataset.yaml --epochs 50 --img 640
+	uv run src/train.py --data data/dataset.yaml --epochs 2 --img 640
 
 test:
 	pytest tests/
