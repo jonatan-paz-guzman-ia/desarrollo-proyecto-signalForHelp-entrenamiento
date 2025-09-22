@@ -20,6 +20,33 @@ from pathlib import Path
 import mlflow
 
 
+def log_all_metrics(results):
+    """Registra todas las métricas relevantes de YOLOv8 en MLflow."""
+    try:
+        # Métricas de cajas (detección)
+        if hasattr(results, "box") and results.box:
+            mlflow.log_metric("box_precision", results.box.mp)
+            mlflow.log_metric("box_recall", results.box.mr)
+            mlflow.log_metric("box_map50", results.box.map50)
+            mlflow.log_metric("box_map", results.box.map)
+
+        # Métricas de segmentación
+        if hasattr(results, "seg") and results.seg:
+            mlflow.log_metric("seg_precision", results.seg.mp)
+            mlflow.log_metric("seg_recall", results.seg.mr)
+            mlflow.log_metric("seg_map50", results.seg.map50)
+            mlflow.log_metric("seg_map", results.seg.map)
+
+        # Velocidades (inferencia, NMS, etc.)
+        if hasattr(results, "speed") and isinstance(results.speed, dict):
+            for k, v in results.speed.items():
+                mlflow.log_metric(f"speed_{k}", v)
+
+        print("✅ Métricas registradas en MLflow")
+    except Exception as e:
+        print("⚠️ No se pudieron registrar métricas en MLflow:", e)
+
+
 def train_model(data_yaml, epochs, img_size, model_type, save_dir):
     print(f"Entrenando modelo: {model_type}")
     print(f"Dataset: {data_yaml}")
@@ -53,7 +80,7 @@ def train_model(data_yaml, epochs, img_size, model_type, save_dir):
     else:
         print("⚠️ No se encontró el modelo entrenado.")
 
-    # Registro manual en MLflow (después del entrenamiento)
+    # Registro manual en MLflow
     mlflow.set_experiment("SignalForHelp - YOLOv8")
     with mlflow.start_run():
         # Parámetros
@@ -66,14 +93,8 @@ def train_model(data_yaml, epochs, img_size, model_type, save_dir):
         if target.exists():
             mlflow.log_artifact(str(target), artifact_path="model")
 
-        # Métricas básicas
-        try:
-            metrics = results.metrics
-            mlflow.log_metric("precision", getattr(metrics.box, "map", 0))
-            mlflow.log_metric("recall", getattr(metrics.box, "map50", 0))
-            mlflow.log_metric("segmentation_mAP", getattr(metrics.seg, "map", 0))
-        except Exception as e:
-            print("⚠️ No se pudieron registrar métricas en MLflow:", e)
+        # Métricas completas
+        log_all_metrics(results)
 
 
 if __name__ == "__main__":
