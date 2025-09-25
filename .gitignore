@@ -5,6 +5,7 @@
 runs/
 artefactos/predicciones/
 *.png
+*.jpg
 
 # Cache
 __pycache__/
